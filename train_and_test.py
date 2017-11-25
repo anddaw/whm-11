@@ -4,7 +4,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 import pandas
 import argparse
-
+import numpy
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -33,6 +33,19 @@ def generate_labels(data):
 def encode_to_one_hot(data, labels):
     return keras.utils.to_categorical(list(map(lambda k: labels[k], data)), len(labels))
 
+def test_model(model, test_x_batch, test_y_batch):
+
+    success = 0
+
+    predictions = model.predict(test_x_batch)
+
+    for i in range(len(predictions)):
+        if predictions[i].argmax() == test_y[i].argmax():
+            success += 1
+
+    acurracy = float(success)/len(predictions)
+
+    return acurracy
 
 args = parse_args()
 
@@ -52,8 +65,10 @@ model.add(Dense(len(labels), activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 model.fit(train_x, train_y, batch_size=3, epochs=args.epochs)
 
-score = model.evaluate(test_x, test_y, batch_size=3)
+# score = model.evaluate(test_x, test_y, batch_size=3)
 
 print("PARAMS: layers: " + str(args.layers) + ", width: " +
       str(args.width) + ", epochs: " + str(args.epochs))
-print("SCORE: " + str(score))
+# print("SCORE: " + str(score))
+
+print(test_model(model, test_x, test_y))
