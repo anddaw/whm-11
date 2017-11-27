@@ -71,4 +71,5 @@ print("PARAMS: layers: " + str(args.layers) + ", width: " +
       str(args.width) + ", epochs: " + str(args.epochs))
 # print("SCORE: " + str(score))
 
-print(test_model(model, test_x, test_y))
+print("Training:" +  str(test_model(model, train_x, train_y)))
+print("Testing:" +  str(test_model(model, test_x, test_y)))
