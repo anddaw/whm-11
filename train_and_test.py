@@ -40,7 +40,7 @@ def test_model(model, test_x_batch, test_y_batch):
     predictions = model.predict(test_x_batch)
 
     for i in range(len(predictions)):
-        if predictions[i].argmax() == test_y[i].argmax():
+        if predictions[i].argmax() == test_y_batch[i].argmax():
             success += 1
 
     acurracy = float(success)/len(predictions)
@@ -57,13 +57,14 @@ test_x, test_y = get_data(args.testfile)
 test_y = encode_to_one_hot(test_y, labels)
 
 model = Sequential()
-model.add(Dense(args.width, activation='relu', input_dim=36))
+
+model.add(Dense(36, activation='linear', input_dim=36))
 for i in range(args.layers):
-    model.add(Dense(args.width, activation='relu'))
+    model.add(Dense(args.width, activation='tanh'))
 model.add(Dense(len(labels), activation='softmax'))
 
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(train_x, train_y, batch_size=3, epochs=args.epochs)
+model.fit(train_x, train_y, batch_size=102, epochs=args.epochs)
 
 # score = model.evaluate(test_x, test_y, batch_size=3)
 
