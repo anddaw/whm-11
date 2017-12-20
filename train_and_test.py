@@ -29,7 +29,7 @@ def generate_labels(data):
 
 def encode_to_one_hot(data, labels):
     return keras.utils.to_categorical(list(map(lambda k: labels[k], data)), len(labels))
-
+  
 args = parse_args()
 
 train_x, train_y = get_data(args.trainfile)
