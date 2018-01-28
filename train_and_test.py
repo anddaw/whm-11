@@ -86,7 +86,7 @@ train_x = scaler.fit_transform(train_x)
 
 test_x, test_y = get_data(args.testfile)
 
-test_x = scaler.fit_transform(test_x)
+test_x = scaler.transform(test_x)
 
 output_layer_activation = ""
 loss_function = ""
