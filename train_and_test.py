@@ -4,7 +4,9 @@ from keras.models import Sequential
 from keras.layers import Dense
 import pandas
 import argparse
+import math
 import numpy
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -13,7 +15,9 @@ def parse_args():
     parser.add_argument('layers', type=int)
     parser.add_argument('width', type=int)
     parser.add_argument('epochs', type=int)
+    parser.add_argument("--encoding", type=str, default="one_hot")
     return parser.parse_args()
+
 
 def get_data(file):
 
@@ -33,38 +37,74 @@ def generate_labels(data):
 def encode_to_one_hot(data, labels):
     return keras.utils.to_categorical(list(map(lambda k: labels[k], data)), len(labels))
 
-def test_model(model, test_x_batch, test_y_batch):
+
+def int_to_vector_of_bits(integer, vector_length):
+
+    return [int(i) for i in format(integer, "0" + str(vector_length) + "b")]
+
+
+def encode_to_moc(data, labels):
+    vector_length = math.ceil(math.log(len(labels), 2.0))
+
+    return numpy.array([int_to_vector_of_bits(labels[x], vector_length) for x in data])
+
+
+def normalize_moc(moc_vector):
+    threshold = 0.5
+    return list(map(lambda x: 1 if x >= threshold else 0, moc_vector))
+
+def test_model(model, test_x_batch, test_y_batch, encoding):
 
     success = 0
 
     predictions = model.predict(test_x_batch)
 
-    for i in range(len(predictions)):
-        if predictions[i].argmax() == test_y_batch[i].argmax():
-            success += 1
+    if encoding == "one_hot":
+        for i in range(len(predictions)):
+            if predictions[i].argmax() == test_y_batch[i].argmax():
+                success += 1
+    elif encoding == "moc":
+        for i in range(len(predictions)):
+            if normalize_moc(predictions[i]) == normalize_moc(test_y_batch[i]):
+                success += 1
 
-    acurracy = float(success)/len(predictions)
+    accuracy = float(success)/len(predictions)
 
-    return acurracy
+    return accuracy
+
 
 args = parse_args()
 
+encoding = args.encoding
+
 train_x, train_y = get_data(args.trainfile)
 labels = generate_labels(train_y)
-train_y = encode_to_one_hot(train_y, labels)
 
 test_x, test_y = get_data(args.testfile)
-test_y = encode_to_one_hot(test_y, labels)
+
+output_layer_activation = ""
+loss_function = ""
+
+if encoding == "one_hot":
+    train_y = encode_to_one_hot(train_y, labels)
+    test_y = encode_to_one_hot(test_y, labels)
+    output_layer_activation = "softmax"
+    loss_function = "categorical_crossentropy"
+elif encoding == "moc":
+    test_y = encode_to_moc(test_y, labels)
+    train_y = encode_to_moc(train_y, labels)
+    output_layer_activation = "sigmoid"
+    loss_function = "binary_crossentropy"
 
 model = Sequential()
 
 model.add(Dense(36, activation='linear', input_dim=36))
 for i in range(args.layers):
     model.add(Dense(args.width, activation='tanh'))
-model.add(Dense(len(labels), activation='softmax'))
+model.add(Dense(len(train_y[0]), activation=output_layer_activation))
 
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-model.fit(train_x, train_y, batch_size=102, epochs=args.epochs)
+model.compile(loss=loss_function, optimizer='adam', metrics=['accuracy'])
+model.fit(train_x, train_y, batch_size=10, epochs=args.epochs)
 
 # score = model.evaluate(test_x, test_y, batch_size=3)
 
@@ -72,5 +112,5 @@ print("PARAMS: layers: " + str(args.layers) + ", width: " +
       str(args.width) + ", epochs: " + str(args.epochs))
 # print("SCORE: " + str(score))
 
-print("Training:" +  str(test_model(model, train_x, train_y)))
-print("Testing:" +  str(test_model(model, test_x, test_y)))
+print("Training:" + str(test_model(model, train_x, train_y, encoding)))
+print("Testing:" + str(test_model(model, test_x, test_y, encoding)))
