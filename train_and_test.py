@@ -6,7 +6,7 @@ import pandas
 import argparse
 import math
 import numpy
-
+from sklearn.preprocessing import StandardScaler
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -77,10 +77,16 @@ args = parse_args()
 
 encoding = args.encoding
 
+scaler = StandardScaler()
+
 train_x, train_y = get_data(args.trainfile)
 labels = generate_labels(train_y)
 
+train_x = scaler.fit_transform(train_x)
+
 test_x, test_y = get_data(args.testfile)
+
+test_x = scaler.fit_transform(test_x)
 
 output_layer_activation = ""
 loss_function = ""
